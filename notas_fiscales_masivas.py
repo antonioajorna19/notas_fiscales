@@ -1,6 +1,8 @@
 import requests
 import os
 import threading
+import time 
+
 
 def obtener_info_shipments(listado_shipments:list, shipments_sin_info:list, info_shipments_id:list):
 
@@ -44,7 +46,7 @@ def obtener_notas(listado_info_shipments:list, nombre_carpeta:str, shipments_sin
     POST:Al ser un procedimiento, se retorna un dato de tipo None.
     """
     os.mkdir(nombre_carpeta)
-    os.system("cls")
+    #os.system("cls")
     
     for shipment, sender_id, fiscal_key, type in listado_info_shipments:
 
@@ -81,14 +83,17 @@ def main():
     info_shipments = list()
     shipments_sin_info = list()
     listado_shipments = obtener_listado_shipments("shipments.txt")
-    for i in range (len(listado_shipments)):
-        hilo = threading.Thread(target=obtener_info_shipments, args=[listado_shipments, shipments_sin_info, info_shipments])
-        hilo.start()
-        print(info_shipments)
     #obtener_info_shipments(listado_shipments, shipments_sin_info, info_shipments)
-    
+    hilo_1 = threading.Thread(target=obtener_info_shipments, args=(listado_shipments,shipments_sin_info, info_shipments))
+    hilo_2 = threading.Thread(target=obtener_notas, args=(info_shipments,"NOTAS FISCALE", shipments_sin_info))
+    hilo_1.start()
+    time.sleep(20)
+    hilo_2.start()
+
+
+
     #obtener_notas(info_shipments,"NOTAS FISCALES", shipments_sin_info)
-    #mostrar_notas_no_descargadas(shipments_sin_info)
+    mostrar_notas_no_descargadas(shipments_sin_info)
 
 
 main()
