@@ -4,21 +4,29 @@ import threading
 import time 
 
 
-def obtener_info_shipments(listado_shipments:list, shipments_sin_info:list, info_shipments_id:list):
+SITE_ID = ""
+ARCHIVO_SHIPMENTS = "" #Nombre del archivo con los shipments, ingresar con su extension.Ej: shipments.txt
+FORMATO_NOTAS_FISCALES = "" #pdf/xml
+NOMBRE_CARPETA_DE_DESCARGA = "" #Ejemplo: notas_fiscales
+
+
+def obtener_info_shipments(listado_shipments:list, shipments_sin_info:list, info_shipments_id:list,
+                            site_id:str) ->None:
 
     '''
-    PRE:Recibimos como listas los shipmets y una lista vacia donde se agregan los shipments que no se pueda obtener informacion.
-    POST:Retornamos la lista con la info necesitada de cada shipment.
+    PRE:Recibimos en una lista los shipmets y una lista vacia donde se agregan los shipments que no se pueda obtener informacion.
+    POST:Por ser un procedimiento se retorna un valor de tipo None.
     '''
     
     info_shipments = 0
-    
     for shipment_id in listado_shipments:
 
         try:
-            extraer_info_shipments = requests.get(f"http://internal-api.mercadolibre.com/shipments/{shipment_id}/invoice_data/all?siteId=MLB&caller.scopes=admin&caller.id=admin")
+            extraer_info_shipments = requests.get(f"http://internal-api.mercadolibre.com/shipments/{shipment_id}/invoice_data/all?siteId={site_id}&caller.scopes=admin&caller.id=admin")
             info_parseada = extraer_info_shipments.json()
-            info_shipments_id.append((shipment_id,info_parseada[info_shipments]['sender_id'], info_parseada[info_shipments]['fiscal_key'], "pdf"))
+            info_shipments_id.append((shipment_id, info_parseada[info_shipments]['sender_id'], 
+                            info_parseada[info_shipments]['fiscal_key'], FORMATO_NOTAS_FISCALES))
+            
             print(f"{shipment_id} - Informacion obtenida")
         except Exception:
             shipments_sin_info.append(shipment_id)
@@ -39,20 +47,20 @@ def obtener_listado_shipments(nombre_archivo:str) ->list:
     return listado_shipments_limpios
 
 
-def obtener_notas(listado_info_shipments:list, nombre_carpeta:str, shipments_sin_info:list) ->None:
+def obtener_notas(listado_info_shipments:list, nombre_carpeta_de_descarga:str, shipments_sin_info:list) ->None:
 
     """
     PRE:Recibimos como lista todos los shipments ademas de el nombre de la carpeta donde se descargaran las NF de los SH.
     POST:Al ser un procedimiento, se retorna un dato de tipo None.
     """
-    os.mkdir(nombre_carpeta)
+    os.mkdir(nombre_carpeta_de_descarga)
     #os.system("cls")
     
     for shipment, sender_id, fiscal_key, type in listado_info_shipments:
 
         try:
             consulta = requests.get(f"https://internal-api.mercadolibre.com/shipping-tax/gateway/shipments/{shipment}/nfe/{fiscal_key}?doctype={type}&caller.id={sender_id}&caller.scopes=admin")
-            with open(f"{nombre_carpeta}\\{shipment}.pdf","wb")as archivo:
+            with open(f"{nombre_carpeta_de_descarga}\\{shipment}.{FORMATO_NOTAS_FISCALES}","wb")as archivo:
                 archivo.write(consulta.content)
                 print(f"{shipment} - Nota fiscal descargada")
         except Exception:
@@ -68,7 +76,6 @@ def mostrar_notas_no_descargadas(shipments_sin_info:list) ->None:
     vacio = 0
     os.system("cls")
     
-
     if len(shipments_sin_info) == vacio:
         print("Todas las notas se pudieron descargar correctamente.")
     else:
@@ -80,19 +87,16 @@ def mostrar_notas_no_descargadas(shipments_sin_info:list) ->None:
 
 def main():
 
+    
     info_shipments = list()
     shipments_sin_info = list()
-    listado_shipments = obtener_listado_shipments("shipments.txt")
-    #obtener_info_shipments(listado_shipments, shipments_sin_info, info_shipments)
-    hilo_1 = threading.Thread(target=obtener_info_shipments, args=(listado_shipments,shipments_sin_info, info_shipments))
-    hilo_2 = threading.Thread(target=obtener_notas, args=(info_shipments,"NOTAS FISCALE", shipments_sin_info))
+    listado_shipments = obtener_listado_shipments(ARCHIVO_SHIPMENTS)
+    hilo_1 = threading.Thread(target=obtener_info_shipments, args=(listado_shipments,shipments_sin_info, info_shipments, SITE_ID))
+    hilo_2 = threading.Thread(target=obtener_notas, args=(info_shipments,NOMBRE_CARPETA_DE_DESCARGA, shipments_sin_info))
     hilo_1.start()
     time.sleep(20)
     hilo_2.start()
-
-
-
-    #obtener_notas(info_shipments,"NOTAS FISCALES", shipments_sin_info)
+    hilo_2.join()
     mostrar_notas_no_descargadas(shipments_sin_info)
 
 
