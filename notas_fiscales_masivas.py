@@ -4,10 +4,10 @@ import threading
 import time 
 
 
-SITE_ID = ""
-ARCHIVO_SHIPMENTS = "" #Nombre del archivo con los shipments, ingresar con su extension.Ej: shipments.txt
-FORMATO_NOTAS_FISCALES = "" #pdf/xml
-NOMBRE_CARPETA_DE_DESCARGA = "" #Ejemplo: notas_fiscales
+SITE_ID = "MLB"
+ARCHIVO_SHIPMENTS = "shipments.txt" #Nombre del archivo con los shipments, ingresar con su extension.Ej: shipments.txt
+FORMATO_NOTAS_FISCALES = "pdf" #pdf/xml
+NOMBRE_CARPETA_DE_DESCARGA = "NOTAS_FISCALES" #Ejemplo: notas_fiscales
 
 
 def obtener_info_shipments(listado_shipments:list, shipments_sin_info:list, info_shipments_id:list,
@@ -94,7 +94,7 @@ def main():
     hilo_1 = threading.Thread(target=obtener_info_shipments, args=(listado_shipments,shipments_sin_info, info_shipments, SITE_ID))
     hilo_2 = threading.Thread(target=obtener_notas, args=(info_shipments,NOMBRE_CARPETA_DE_DESCARGA, shipments_sin_info))
     hilo_1.start()
-    time.sleep(20)
+    time.sleep(0.8)
     hilo_2.start()
     hilo_2.join()
     mostrar_notas_no_descargadas(shipments_sin_info)
