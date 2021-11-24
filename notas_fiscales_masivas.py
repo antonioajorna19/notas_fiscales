@@ -2,7 +2,7 @@ import requests
 import os
 import threading
 import time 
-
+import shutil
 
 SITE_ID = "MLB"
 ARCHIVO_SHIPMENTS = "shipments.txt" #Nombre del archivo con los shipments, ingresar con su extension.Ej: shipments.txt
@@ -85,6 +85,15 @@ def mostrar_notas_no_descargadas(shipments_sin_info:list) ->None:
             print(shipment_id)
 
 
+def comprimir_carpeta(nombre_carpeta:str) ->None:
+    """
+    PRE:Se recibe el nombre de la carpeta a comprimir.
+    POST:Una vez comprimida, se retorna un dato de tipo None, esto debido a ser un procedimiento.
+    """
+
+    shutil.make_archive(nombre_carpeta,"zip",nombre_carpeta)
+
+
 def main():
 
     
@@ -97,6 +106,7 @@ def main():
     time.sleep(0.8)
     hilo_2.start()
     hilo_2.join()
+    comprimir_carpeta(NOMBRE_CARPETA_DE_DESCARGA)
     mostrar_notas_no_descargadas(shipments_sin_info)
 
 
